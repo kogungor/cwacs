@@ -217,6 +217,54 @@ M.builtins = {
     ]],
   },
   {
+    id = "CWACS_PY_SQLI_STRING_CONCAT_EXECUTE",
+    languages = { "python" },
+    severity = "high",
+    confidence = "medium",
+    cwe = "CWE-89",
+    message = "Potential SQL injection: string concatenation in execute()",
+    compound = {
+      operator = "all_of",
+      anchor_pattern = "execute%s*%(",
+      clauses = {
+        { type = "line_pattern", pattern = "execute%s*%(" },
+        { type = "line_pattern", pattern = "%+" },
+      },
+    },
+  },
+  {
+    id = "CWACS_JS_SQLI_TEMPLATE_QUERY",
+    languages = { "javascript", "typescript", "tsx", "jsx" },
+    severity = "high",
+    confidence = "medium",
+    cwe = "CWE-89",
+    message = "Potential SQL injection: template literal in query()",
+    compound = {
+      operator = "all_of",
+      anchor_pattern = "query%s*%(",
+      clauses = {
+        { type = "line_pattern", pattern = "query%s*%(" },
+        { type = "line_pattern", pattern = "%${" },
+      },
+    },
+  },
+  {
+    id = "CWACS_GO_SQLI_SPRINTF_DBQUERY",
+    languages = { "go" },
+    severity = "high",
+    confidence = "medium",
+    cwe = "CWE-89",
+    message = "Potential SQL injection: fmt.Sprintf used in db.Query",
+    compound = {
+      operator = "all_of",
+      anchor_pattern = "db%.Query%s*%(",
+      clauses = {
+        { type = "line_pattern", pattern = "db%.Query%s*%(" },
+        { type = "line_pattern", pattern = "fmt%.Sprintf%s*%(" },
+      },
+    },
+  },
+  {
     id = "CWACS_SECRET_KEYWORD_ASSIGN",
     languages = { "python", "javascript", "typescript", "tsx", "jsx", "go", "rust", "lua" },
     severity = "high",

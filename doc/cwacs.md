@@ -10,6 +10,7 @@ Tree-sitter based, Lua-native security lint plugin for Neovim.
 - Debounce and async management: done
 - Dangerous functions built-ins: done
 - Hardcoded secrets rules: done
+- Compound pattern matching: done
 - Remaining planned features: pending
 
 ## Commands
@@ -29,6 +30,7 @@ Tree-sitter based, Lua-native security lint plugin for Neovim.
 - Go: `exec.Command(...)` pattern checks
 - Rust: `Command::new(...)` pattern checks
 - Language-agnostic secret detection: keyword-based secret assignments and high-entropy token-like literals
+- Compound SQL-injection style detection: Python concatenated execute, JS template-literal query, Go sprintf+query same-line pattern
 
 Notes:
 - Missing tree-sitter parser for a language results in no findings for that language.
