@@ -1,4 +1,5 @@
 local M = {}
+local secrets = require("cwacs.util.secrets")
 
 M.builtins = {
   {
@@ -214,6 +215,67 @@ M.builtins = {
         function: (_) @fn
         (#match? @fn "Command::new$")) @finding
     ]],
+  },
+  {
+    id = "CWACS_SECRET_KEYWORD_ASSIGN",
+    languages = { "python", "javascript", "typescript", "tsx", "jsx", "go", "rust", "lua" },
+    severity = "high",
+    confidence = "high",
+    cwe = "CWE-798",
+    message = "Potential hardcoded secret assignment detected",
+    custom_scan = function(bufnr, rule)
+      local findings = {}
+      local lines = vim.api.nvim_buf_get_lines(bufnr, 0, -1, false)
+      for i, line in ipairs(lines) do
+        local match = secrets.keyword_secret_match(line)
+        if match then
+          findings[#findings + 1] = {
+            rule_id = rule.id,
+            severity = rule.severity,
+            message = rule.message,
+            lnum = i - 1,
+            col = match.col,
+            end_lnum = i - 1,
+            end_col = match.end_col,
+            cwe = rule.cwe,
+            confidence = rule.confidence,
+            secret_value = match.value,
+          }
+        end
+      end
+      return findings
+    end,
+  },
+  {
+    id = "CWACS_SECRET_HIGH_ENTROPY",
+    languages = { "python", "javascript", "typescript", "tsx", "jsx", "go", "rust", "lua" },
+    severity = "medium",
+    confidence = "medium",
+    cwe = "CWE-798",
+    message = "High-entropy hardcoded token-like string detected",
+    custom_scan = function(bufnr, rule)
+      local findings = {}
+      local lines = vim.api.nvim_buf_get_lines(bufnr, 0, -1, false)
+      for i, line in ipairs(lines) do
+        local match = secrets.high_entropy_secret_match(line)
+        if match then
+          findings[#findings + 1] = {
+            rule_id = rule.id,
+            severity = rule.severity,
+            message = rule.message,
+            lnum = i - 1,
+            col = match.col,
+            end_lnum = i - 1,
+            end_col = match.end_col,
+            cwe = rule.cwe,
+            confidence = rule.confidence,
+            secret_value = match.value,
+            entropy = match.entropy,
+          }
+        end
+      end
+      return findings
+    end,
   },
 }
 

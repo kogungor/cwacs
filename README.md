@@ -6,11 +6,12 @@ Tree-sitter based, Lua-native security linter for Neovim.
 
 ## Current Status
 
-- Milestones completed: scaffold and setup, basic tree-sitter engine, diagnostics UX, debounce and async management, dangerous functions built-ins.
+- Milestones completed: scaffold and setup, basic tree-sitter engine, diagnostics UX, debounce and async management, dangerous functions built-ins, hardcoded secrets rules.
 - Commands available: `:CwacsScan`, `:CwacsToggle`, `:CwacsFindings`, `:CwacsExplain`, `:CwacsHelp`, `:CwacsHealth`.
 - Realtime + on-save wiring is active.
 - Debounce now cancels stale scheduled scans and force-runs on save.
-- Initial dangerous-function detection implemented for Python, JavaScript/TypeScript, Go, and Rust.
+- Initial dangerous-function detection is implemented for Python, JavaScript/TypeScript, Go, and Rust.
+- Hardcoded secret detection now includes keyword-based and high-entropy token rules with env/placeholder suppression.
 
 ## Goals
 
@@ -74,7 +75,7 @@ You can also use prepared fixtures under `playground/`.
 ## Feature Test Files
 
 - One feature test file exists per milestone under `tests/features/` (`sg_001` .. `sg_016`).
-- Current implemented tests: scaffold and setup, tree-sitter engine baseline, diagnostics adapter, debounce and async management, dangerous functions built-ins.
+- Current implemented tests: scaffold and setup, tree-sitter engine baseline, diagnostics adapter, debounce and async management, dangerous functions built-ins, hardcoded secrets rules.
 - Future feature tests are already scaffolded and marked as skipped until implemented.
 
 Run feature tests with headless Neovim:
@@ -87,12 +88,14 @@ Expected current result:
 - Scaffold and setup, diagnostics adapter, and debounce and async management should pass.
 - Tree-sitter engine baseline may skip if JS parser is unavailable.
 - Dangerous functions built-ins may skip if required parsers are unavailable.
+- Hardcoded secrets rules should pass without parser dependency.
 - Remaining planned features should report skipped.
 
 ## Troubleshooting
 
 - `:CwacsScan` always prints completion info. If findings are `0`, this can be normal.
 - Current rules include `eval()`, command execution primitives, and selected deserialization APIs.
+- For secret validation, use `playground/python/vuln_secret.py` and `playground/javascript/vuln_secret.js`.
 - If you print all diagnostics, you may mostly see LSP entries. Filter cwacs diagnostics by namespace (example in Manual test flow step 3).
 - If diagnostics output is `{}`, there are no cwacs findings for the current buffer/line. Verify with `:CwacsHealth` that the language parser is installed and use a known vulnerable fixture.
 - To get realtime scan notifications while typing, set `realtime.notify = true` in setup.
@@ -100,6 +103,8 @@ Expected current result:
 - For temporary scan tracing, set `realtime.debug = true`.
 - To hide manual scan notifications, set `scan.notify_on_manual = false`.
 - To hide "0 findings" notifications, set `scan.notify_when_no_findings = false`.
+- To suppress known secret literals, add them line-by-line to `.cwacs/allowlist` (or set `secrets.allowlist_path`).
+- To reduce noisy secret findings in test files, keep `secrets.reduce_severity_in_tests = true`.
 
 ## Configuration
 
@@ -121,6 +126,20 @@ require("cwacs").setup({
   scan = {
     notify_on_manual = true,
     notify_when_no_findings = true,
+  },
+  secrets = {
+    allowlist_path = ".cwacs/allowlist",
+    reduce_severity_in_tests = true,
+    test_file_severity = "low",
+  },
+  test_file_patterns = {
+    "_test.",
+    "test_",
+    ".spec.",
+    ".test.",
+    "/tests/",
+    "/spec/",
+    "/fixtures/",
   },
   rules = {
     disabled = {},

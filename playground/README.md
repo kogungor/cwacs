@@ -11,7 +11,9 @@ Manual testing fixtures for quick local validation.
 ## Fixtures
 
 - `python/vuln_eval.py` and `python/safe_no_eval.py`
+- `python/vuln_secret.py` and `python/safe_env_secret.py`
 - `javascript/vuln_eval.js` and `javascript/safe_no_eval.js`
+- `javascript/vuln_secret.js` and `javascript/safe_env_secret.js`
 - `go/vuln_exec.go` and `go/safe_exec.go`
 - `rust/vuln_command.rs` and `rust/safe_command.rs`
 

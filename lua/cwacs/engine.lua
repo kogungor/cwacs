@@ -1,4 +1,5 @@
 local M = {}
+local config = require("cwacs.config")
 local rules = require("cwacs.rules")
 
 local function resolve_lang(bufnr)
@@ -80,8 +81,92 @@ local function dedupe_findings(findings)
   return deduped
 end
 
+local function is_secret_rule(rule_id)
+  return type(rule_id) == "string" and rule_id:match("^CWACS_SECRET_") ~= nil
+end
+
+local function get_buf_path(bufnr)
+  return vim.api.nvim_buf_get_name(bufnr) or ""
+end
+
+local function is_test_file(bufnr, patterns)
+  local path = get_buf_path(bufnr):lower()
+  if path == "" then
+    return false
+  end
+
+  for _, pattern in ipairs(patterns or {}) do
+    if path:find(pattern:lower(), 1, true) then
+      return true
+    end
+  end
+
+  return false
+end
+
+local function load_allowlist_entries(path)
+  if not path or path == "" then
+    return {}
+  end
+
+  local absolute = vim.fs.normalize(vim.fn.fnamemodify(path, ":p"))
+  local file = io.open(absolute, "r")
+  if not file then
+    return {}
+  end
+
+  local entries = {}
+  for line in file:lines() do
+    local trimmed = line:match("^%s*(.-)%s*$")
+    if trimmed ~= "" and not trimmed:match("^#") then
+      entries[trimmed] = true
+    end
+  end
+
+  file:close()
+  return entries
+end
+
+local function apply_secret_post_filters(bufnr, findings)
+  local opts = config.get()
+  local secret_opts = opts.secrets or {}
+  local allowlist = load_allowlist_entries(secret_opts.allowlist_path)
+  local in_test_file = is_test_file(bufnr, opts.test_file_patterns)
+  local reduced_severity = secret_opts.test_file_severity or "low"
+
+  local filtered = {}
+  for _, finding in ipairs(findings) do
+    local skip = false
+
+    if is_secret_rule(finding.rule_id) then
+      if finding.secret_value and allowlist[finding.secret_value] then
+        skip = true
+      elseif secret_opts.reduce_severity_in_tests and in_test_file then
+        finding.severity = reduced_severity
+        finding.confidence = "low"
+      end
+    end
+
+    if not skip then
+      filtered[#filtered + 1] = finding
+    end
+  end
+
+  return filtered
+end
+
 local function run_rule(bufnr, lang, root, rule)
   local findings = {}
+
+  if type(rule.custom_scan) == "function" then
+    local custom_ok, custom_findings = pcall(rule.custom_scan, bufnr, rule, lang)
+    if custom_ok and type(custom_findings) == "table" then
+      for _, finding in ipairs(custom_findings) do
+        findings[#findings + 1] = finding
+      end
+    end
+  end
+
   local query = nil
   local query_ok = false
   local query_used = false
@@ -140,7 +225,9 @@ function M.scan(bufnr)
     end
   end
 
-  return findings
+  findings = dedupe_findings(findings)
+  findings = apply_secret_post_filters(bufnr, findings)
+  return dedupe_findings(findings)
 end
 
 return M
