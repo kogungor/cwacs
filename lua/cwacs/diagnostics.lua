@@ -2,6 +2,10 @@ local M = {}
 
 local namespace = vim.api.nvim_create_namespace("cwacs")
 
+vim.diagnostic.config({
+  signs = false,
+}, namespace)
+
 local severity_map = {
   critical = vim.diagnostic.severity.ERROR,
   high = vim.diagnostic.severity.ERROR,

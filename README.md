@@ -6,11 +6,11 @@ Tree-sitter based, Lua-native security linter for Neovim.
 
 ## Current Status
 
-- Milestones completed: scaffold and setup, basic tree-sitter engine, diagnostics UX, debounce and async management.
+- Milestones completed: scaffold and setup, basic tree-sitter engine, diagnostics UX, debounce and async management, dangerous functions built-ins.
 - Commands available: `:CwacsScan`, `:CwacsToggle`, `:CwacsFindings`, `:CwacsExplain`, `:CwacsHelp`, `:CwacsHealth`.
 - Realtime + on-save wiring is active.
 - Debounce now cancels stale scheduled scans and force-runs on save.
-- Initial detection implemented: `eval()` for JavaScript/TypeScript and Python.
+- Initial dangerous-function detection implemented for Python, JavaScript/TypeScript, Go, and Rust.
 
 ## Goals
 
@@ -47,6 +47,10 @@ return {
         on_save = {
           enabled = true,
         },
+        scan = {
+          notify_on_manual = true,
+          notify_when_no_findings = true,
+        },
       })
     end,
   },
@@ -70,7 +74,7 @@ You can also use prepared fixtures under `playground/`.
 ## Feature Test Files
 
 - One feature test file exists per milestone under `tests/features/` (`sg_001` .. `sg_016`).
-- Current implemented tests: scaffold and setup, tree-sitter engine baseline, diagnostics adapter, debounce and async management.
+- Current implemented tests: scaffold and setup, tree-sitter engine baseline, diagnostics adapter, debounce and async management, dangerous functions built-ins.
 - Future feature tests are already scaffolded and marked as skipped until implemented.
 
 Run feature tests with headless Neovim:
@@ -82,15 +86,20 @@ nvim --headless -u NONE "+set rtp+=$(pwd)" "+luafile tests/run_feature_tests.lua
 Expected current result:
 - Scaffold and setup, diagnostics adapter, and debounce and async management should pass.
 - Tree-sitter engine baseline may skip if JS parser is unavailable.
+- Dangerous functions built-ins may skip if required parsers are unavailable.
 - Remaining planned features should report skipped.
 
 ## Troubleshooting
 
 - `:CwacsScan` always prints completion info. If findings are `0`, this can be normal.
-- At this stage only `eval()` rules are active, so test with files like `playground/javascript/vuln_eval.js`.
+- Current rules include `eval()`, command execution primitives, and selected deserialization APIs.
 - If you print all diagnostics, you may mostly see LSP entries. Filter cwacs diagnostics by namespace (example in Manual test flow step 3).
 - If diagnostics output is `{}`, there are no cwacs findings for the current buffer/line. Verify with `:CwacsHealth` that the language parser is installed and use a known vulnerable fixture.
 - To get realtime scan notifications while typing, set `realtime.notify = true` in setup.
+- If notifications are too noisy, increase `realtime.notify_min_interval_ms`.
+- For temporary scan tracing, set `realtime.debug = true`.
+- To hide manual scan notifications, set `scan.notify_on_manual = false`.
+- To hide "0 findings" notifications, set `scan.notify_when_no_findings = false`.
 
 ## Configuration
 
@@ -103,9 +112,15 @@ require("cwacs").setup({
     enabled = true,
     debounce_ms = 300,
     notify = false,
+    notify_min_interval_ms = 1500,
+    debug = false,
   },
   on_save = {
     enabled = true,
+  },
+  scan = {
+    notify_on_manual = true,
+    notify_when_no_findings = true,
   },
   rules = {
     disabled = {},
@@ -117,7 +132,7 @@ require("cwacs").setup({
 
 - `:CwacsScan` - run scan for current buffer and show summary
 - `:CwacsToggle` - enable/disable cwacs runtime scanning
-- `:CwacsFindings` - refresh location list entries for current-buffer findings
+- `:CwacsFindings` - refresh location list entries for current-buffer findings (then use `:lopen`)
 - `:CwacsExplain` - open float popup for finding on current line
 - `:CwacsFinding` - alias of `:CwacsExplain`
 - `:CwacsHelp` - show quick command help

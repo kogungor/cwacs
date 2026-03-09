@@ -13,7 +13,15 @@ local state = {
   pending_rescan = {},
   last_ticks = {},
   findings_by_buf = {},
+  last_realtime_notify_at = {},
 }
+
+local function debug_log(message)
+  local opts = config.get()
+  if opts.realtime and opts.realtime.debug then
+    vim.notify("cwacs debug: " .. message, vim.log.levels.DEBUG)
+  end
+end
 
 local function severity_rank(severity)
   if severity == "critical" then
@@ -47,7 +55,18 @@ local function summarize_findings(findings)
   return summary
 end
 
-local function notify_scan_summary(findings)
+local function notify_scan_summary(findings, reason)
+  local opts = config.get()
+  local scan_opts = opts.scan or {}
+
+  if reason == "manual" and not scan_opts.notify_on_manual then
+    return
+  end
+
+  if #findings == 0 and not scan_opts.notify_when_no_findings then
+    return
+  end
+
   local summary = summarize_findings(findings)
   local top = findings[1]
   local top_text = ""
@@ -71,6 +90,24 @@ local function notify_scan_summary(findings)
     ),
     vim.log.levels.INFO
   )
+end
+
+local function should_notify_realtime(bufnr)
+  local opts = config.get()
+  local rt = opts.realtime or {}
+  if not rt.notify then
+    return false
+  end
+
+  local min_interval = rt.notify_min_interval_ms or 1500
+  local now_ms = math.floor(vim.uv.hrtime() / 1000000)
+  local last_ms = state.last_realtime_notify_at[bufnr] or 0
+  if (now_ms - last_ms) < min_interval then
+    return false
+  end
+
+  state.last_realtime_notify_at[bufnr] = now_ms
+  return true
 end
 
 local function is_parser_available(lang)
@@ -138,17 +175,22 @@ end
 local function run_scan(bufnr, opts)
   opts = opts or {}
 
+  debug_log(string.format("run_scan start bufnr=%d force=%s", bufnr, tostring(opts.force)))
+
   if not state.enabled or not vim.api.nvim_buf_is_valid(bufnr) then
+    debug_log("run_scan skipped (disabled or invalid buffer)")
     return state.findings_by_buf[bufnr] or {}
   end
 
   local current_tick = vim.api.nvim_buf_get_changedtick(bufnr)
   if not opts.force and state.last_ticks[bufnr] == current_tick then
+    debug_log("run_scan skipped (unchanged changedtick)")
     return state.findings_by_buf[bufnr] or {}
   end
 
   if state.scan_running[bufnr] then
     state.pending_rescan[bufnr] = true
+    debug_log("run_scan deferred (scan already running)")
     return state.findings_by_buf[bufnr] or {}
   end
 
@@ -163,6 +205,8 @@ local function run_scan(bufnr, opts)
     end)
     findings = {}
   end
+
+  debug_log(string.format("run_scan completed (%d findings)", #findings))
 
   table.sort(findings, function(a, b)
     return severity_rank(a.severity) < severity_rank(b.severity)
@@ -181,7 +225,7 @@ local function run_scan(bufnr, opts)
   end
 
   if opts.notify then
-    notify_scan_summary(findings)
+    notify_scan_summary(findings, opts.notify_reason)
   end
 
   return findings
@@ -192,6 +236,7 @@ local function schedule_scan(bufnr, debounce_ms)
     return
   end
 
+  debug_log(string.format("schedule_scan bufnr=%d debounce_ms=%d", bufnr, debounce_ms))
   stop_timer(bufnr)
   local generation = next_generation(bufnr)
 
@@ -200,17 +245,21 @@ local function schedule_scan(bufnr, debounce_ms)
   timer:start(debounce_ms, 0, vim.schedule_wrap(function()
     stop_timer(bufnr)
     if generation ~= state.scan_generation[bufnr] then
+      debug_log("scheduled scan dropped (stale generation)")
       return
     end
-    local opts = config.get()
     run_scan(bufnr, {
-      notify = opts.realtime and opts.realtime.notify or false,
+      notify = should_notify_realtime(bufnr),
+      notify_reason = "realtime",
     })
   end))
 end
 
 local function command_scan()
-  run_scan(vim.api.nvim_get_current_buf(), { notify = true })
+  run_scan(vim.api.nvim_get_current_buf(), {
+    notify = true,
+    notify_reason = "manual",
+  })
 end
 
 local function command_findings()
@@ -291,6 +340,10 @@ local function command_health()
     "missing: " .. (#report.missing > 0 and table.concat(report.missing, ", ") or "none"),
   }
 
+  if #report.missing > 0 then
+    lines[#lines + 1] = "hint: install missing parsers with :TSInstall " .. table.concat(report.missing, " ")
+  end
+
   local level = #report.missing == 0 and vim.log.levels.INFO or vim.log.levels.WARN
   vim.notify(table.concat(lines, "\n"), level, { title = "cwacs health" })
 end
@@ -330,7 +383,7 @@ local function create_commands()
   })
 
   vim.api.nvim_create_user_command("CwacsFindings", command_findings, {
-    desc = "Open location list with cwacs findings",
+    desc = "Refresh cwacs location list entries (use :lopen to open)",
   })
 
   vim.api.nvim_create_user_command("CwacsExplain", command_explain, {
@@ -388,6 +441,7 @@ local function create_autocmds(opts)
       state.scan_generation[args.buf] = nil
       state.scan_running[args.buf] = nil
       state.pending_rescan[args.buf] = nil
+      state.last_realtime_notify_at[args.buf] = nil
       state.findings_by_buf[args.buf] = nil
       diagnostics.clear(args.buf)
     end,

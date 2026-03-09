@@ -6,9 +6,15 @@ local defaults = {
     enabled = true,
     debounce_ms = 300,
     notify = false,
+    notify_min_interval_ms = 1500,
+    debug = false,
   },
   on_save = {
     enabled = true,
+  },
+  scan = {
+    notify_on_manual = true,
+    notify_when_no_findings = true,
   },
   rules = {
     disabled = {},
