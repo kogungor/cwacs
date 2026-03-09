@@ -8,6 +8,9 @@ local state = {
   enabled = true,
   augroup = nil,
   timers = {},
+  scan_generation = {},
+  scan_running = {},
+  pending_rescan = {},
   last_ticks = {},
   findings_by_buf = {},
 }
@@ -42,6 +45,32 @@ local function summarize_findings(findings)
   end
 
   return summary
+end
+
+local function notify_scan_summary(findings)
+  local summary = summarize_findings(findings)
+  local top = findings[1]
+  local top_text = ""
+  if top then
+    top_text = string.format(
+      " | top: %s at line %d",
+      top.rule_id or "CWACS",
+      (top.lnum or 0) + 1
+    )
+  end
+
+  vim.notify(
+    string.format(
+      "cwacs scan complete: %d findings (critical:%d high:%d medium:%d low:%d)%s",
+      summary.total,
+      summary.critical,
+      summary.high,
+      summary.medium,
+      summary.low,
+      top_text
+    ),
+    vim.log.levels.INFO
+  )
 end
 
 local function is_parser_available(lang)
@@ -94,24 +123,67 @@ local function stop_timer(bufnr)
   state.timers[bufnr] = nil
 end
 
-local function run_scan(bufnr)
+local function stop_all_timers()
+  for bufnr, _ in pairs(state.timers) do
+    stop_timer(bufnr)
+  end
+end
+
+local function next_generation(bufnr)
+  local generation = (state.scan_generation[bufnr] or 0) + 1
+  state.scan_generation[bufnr] = generation
+  return generation
+end
+
+local function run_scan(bufnr, opts)
+  opts = opts or {}
+
   if not state.enabled or not vim.api.nvim_buf_is_valid(bufnr) then
     return state.findings_by_buf[bufnr] or {}
   end
 
   local current_tick = vim.api.nvim_buf_get_changedtick(bufnr)
-  if state.last_ticks[bufnr] == current_tick then
+  if not opts.force and state.last_ticks[bufnr] == current_tick then
+    return state.findings_by_buf[bufnr] or {}
+  end
+
+  if state.scan_running[bufnr] then
+    state.pending_rescan[bufnr] = true
     return state.findings_by_buf[bufnr] or {}
   end
 
   state.last_ticks[bufnr] = current_tick
-  local findings = engine.scan(bufnr)
+  state.scan_running[bufnr] = true
+  local scan_ok, findings = pcall(engine.scan, bufnr)
+  state.scan_running[bufnr] = nil
+
+  if not scan_ok then
+    vim.schedule(function()
+      vim.notify("cwacs: scan failed: " .. tostring(findings), vim.log.levels.ERROR)
+    end)
+    findings = {}
+  end
+
   table.sort(findings, function(a, b)
     return severity_rank(a.severity) < severity_rank(b.severity)
   end)
 
   state.findings_by_buf[bufnr] = findings
   diagnostics.set(bufnr, findings)
+
+  if state.pending_rescan[bufnr] then
+    state.pending_rescan[bufnr] = nil
+    vim.schedule(function()
+      if vim.api.nvim_buf_is_valid(bufnr) then
+        run_scan(bufnr, { force = true })
+      end
+    end)
+  end
+
+  if opts.notify then
+    notify_scan_summary(findings)
+  end
+
   return findings
 end
 
@@ -121,40 +193,24 @@ local function schedule_scan(bufnr, debounce_ms)
   end
 
   stop_timer(bufnr)
+  local generation = next_generation(bufnr)
 
   local timer = vim.uv.new_timer()
   state.timers[bufnr] = timer
   timer:start(debounce_ms, 0, vim.schedule_wrap(function()
     stop_timer(bufnr)
-    run_scan(bufnr)
+    if generation ~= state.scan_generation[bufnr] then
+      return
+    end
+    local opts = config.get()
+    run_scan(bufnr, {
+      notify = opts.realtime and opts.realtime.notify or false,
+    })
   end))
 end
 
 local function command_scan()
-  local findings = run_scan(vim.api.nvim_get_current_buf())
-  local summary = summarize_findings(findings)
-  local top = findings[1]
-  local top_text = ""
-  if top then
-    top_text = string.format(
-      " | top: %s at line %d",
-      top.rule_id or "CWACS",
-      (top.lnum or 0) + 1
-    )
-  end
-
-  vim.notify(
-    string.format(
-      "cwacs scan complete: %d findings (critical:%d high:%d medium:%d low:%d)%s",
-      summary.total,
-      summary.critical,
-      summary.high,
-      summary.medium,
-      summary.low,
-      top_text
-    ),
-    vim.log.levels.INFO
-  )
+  run_scan(vim.api.nvim_get_current_buf(), { notify = true })
 end
 
 local function command_findings()
@@ -246,6 +302,7 @@ end
 function M.toggle()
   state.enabled = not state.enabled
   if not state.enabled then
+    stop_all_timers()
     diagnostics.clear(vim.api.nvim_get_current_buf())
   end
 
@@ -301,7 +358,7 @@ local function create_autocmds(opts)
   local group = vim.api.nvim_create_augroup("Cwacs", { clear = true })
   state.augroup = group
 
-  vim.api.nvim_create_autocmd("TextChanged", {
+  vim.api.nvim_create_autocmd({ "TextChanged", "TextChangedI" }, {
     group = group,
     callback = function(args)
       if not state.enabled or not opts.realtime.enabled then
@@ -319,7 +376,7 @@ local function create_autocmds(opts)
         return
       end
 
-      run_scan(args.buf)
+      run_scan(args.buf, { force = true })
     end,
   })
 
@@ -328,6 +385,9 @@ local function create_autocmds(opts)
     callback = function(args)
       stop_timer(args.buf)
       state.last_ticks[args.buf] = nil
+      state.scan_generation[args.buf] = nil
+      state.scan_running[args.buf] = nil
+      state.pending_rescan[args.buf] = nil
       state.findings_by_buf[args.buf] = nil
       diagnostics.clear(args.buf)
     end,
