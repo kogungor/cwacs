@@ -9,7 +9,7 @@ This file tracks feature-by-feature delivery and must be updated after each feat
 - [x] Diagnostic API integration and UX
 - [x] Debounce and async hardening
 - [x] Dangerous functions built-ins
-- [ ] Hardcoded secrets
+- [x] Hardcoded secrets
 - [ ] Compound pattern matching
 - [ ] Intra-function dataflow tracker
 - [ ] YAML rule loader and validator
@@ -78,6 +78,19 @@ Delivered:
 - added baseline Rust rule for `Command::new(...)`
 - added parser-aware vulnerable/safe automated tests across supported languages
 
-## SG-006..SG-016
+## SG-006 - Hardcoded secrets
+
+Status: done
+
+Delivered:
+- added keyword-based hardcoded secret detection across supported languages (`api_key`, `secret`, `password`, `token`, `private_key` patterns)
+- added entropy-based token-like hardcoded secret detection (`entropy >= 4.5` with minimum length guard)
+- added false-positive suppression for environment references (`os.environ`, `process.env`, `std::env::var`, etc.)
+- added placeholder suppression for common dummy values (`changeme`, `example`, `dummy`, etc.)
+- added allowlist suppression support via configurable `secrets.allowlist_path`
+- added optional severity reduction for secret findings in test files
+- added automated vulnerable/safe feature tests for hardcoded secret detection
+
+## SG-007..SG-016
 
 Status: pending

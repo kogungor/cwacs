@@ -16,6 +16,20 @@ local defaults = {
     notify_on_manual = true,
     notify_when_no_findings = true,
   },
+  secrets = {
+    allowlist_path = ".cwacs/allowlist",
+    reduce_severity_in_tests = true,
+    test_file_severity = "low",
+  },
+  test_file_patterns = {
+    "_test.",
+    "test_",
+    ".spec.",
+    ".test.",
+    "/tests/",
+    "/spec/",
+    "/fixtures/",
+  },
   rules = {
     disabled = {},
   },

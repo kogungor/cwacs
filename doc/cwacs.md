@@ -9,6 +9,7 @@ Tree-sitter based, Lua-native security lint plugin for Neovim.
 - Diagnostic API integration and UX commands: done
 - Debounce and async management: done
 - Dangerous functions built-ins: done
+- Hardcoded secrets rules: done
 - Remaining planned features: pending
 
 ## Commands
@@ -27,9 +28,13 @@ Tree-sitter based, Lua-native security lint plugin for Neovim.
 - Python: `eval(...)`, `exec(...)`, `os.system(...)`, `subprocess.call(...)`, selected deserialization APIs
 - Go: `exec.Command(...)` pattern checks
 - Rust: `Command::new(...)` pattern checks
+- Language-agnostic secret detection: keyword-based secret assignments and high-entropy token-like literals
 
 Notes:
 - Missing tree-sitter parser for a language results in no findings for that language.
+- Hardcoded secret rules include suppression for environment references and placeholder dummy values.
+- Hardcoded secret values can be allowlisted via `.cwacs/allowlist`.
+- Secret findings in test files can be severity-reduced using config.
 
 ## Configuration
 
@@ -49,6 +54,20 @@ require("cwacs").setup({
   scan = {
     notify_on_manual = true,
     notify_when_no_findings = true,
+  },
+  secrets = {
+    allowlist_path = ".cwacs/allowlist",
+    reduce_severity_in_tests = true,
+    test_file_severity = "low",
+  },
+  test_file_patterns = {
+    "_test.",
+    "test_",
+    ".spec.",
+    ".test.",
+    "/tests/",
+    "/spec/",
+    "/fixtures/",
   },
   rules = {
     disabled = {},
@@ -74,6 +93,8 @@ require("cwacs").setup({
 - Temporary scan trace notifications can be enabled with `realtime.debug = true`.
 - Manual scan summary notifications can be disabled with `scan.notify_on_manual = false`.
 - Zero-finding notifications can be disabled with `scan.notify_when_no_findings = false`.
+- Secret values can be suppressed through allowlist entries at `secrets.allowlist_path`.
+- Secret finding severity can be reduced in test files with `secrets.reduce_severity_in_tests`.
 
 ## Local development install
 
