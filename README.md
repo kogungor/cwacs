@@ -6,8 +6,8 @@ Tree-sitter based, Lua-native security linter for Neovim.
 
 ## Current Status
 
-- Milestones completed: `SG-001` scaffold, `SG-002` basic tree-sitter engine.
-- Commands available: `:CwacsScan`, `:CwacsToggle`.
+- Milestones completed: `SG-001` scaffold, `SG-002` basic tree-sitter engine, `SG-003` diagnostics UX.
+- Commands available: `:CwacsScan`, `:CwacsToggle`, `:CwacsFindings`, `:CwacsExplain`, `:CwacsHelp`, `:CwacsHealth`.
 - Realtime + on-save wiring is active.
 - Initial detection implemented: `eval()` for JavaScript/TypeScript and Python.
 
@@ -60,13 +60,16 @@ Then run `:Lazy sync` and restart Neovim.
 2. Run `:CwacsScan`
 3. Run `:lua vim.print(vim.diagnostic.get(0, { namespace = require('cwacs.diagnostics').namespace() }))`
 4. Toggle realtime with `:CwacsToggle`
+5. Build findings list with `:CwacsFindings`, then open with `:lopen`
+6. On a finding line, show popup detail with `:CwacsExplain` (or `:CwacsFinding` alias)
+7. Run `:CwacsHealth` to verify parser readiness
 
 You can also use prepared fixtures under `playground/`.
 
 ## Feature Test Files
 
 - One feature test file exists per milestone under `tests/features/` (`sg_001` .. `sg_016`).
-- Current implemented test: `SG-001` scaffold checks.
+- Current implemented tests: `SG-001` scaffold, `SG-002` engine baseline, `SG-003` diagnostics adapter.
 - Future feature tests are already scaffolded and marked as skipped until implemented.
 
 Run feature tests with headless Neovim:
@@ -76,8 +79,8 @@ nvim --headless -u NONE "+set rtp+=$(pwd)" "+luafile tests/run_feature_tests.lua
 ```
 
 Expected current result:
-- `SG-001` and `SG-002` should pass.
-- `SG-003` .. `SG-016` should report skipped.
+- `SG-001`, `SG-002`, and `SG-003` should pass (SG-002 may skip if JS parser is unavailable).
+- `SG-004` .. `SG-016` should report skipped.
 
 ## Troubleshooting
 
@@ -107,15 +110,20 @@ require("cwacs").setup({
 
 ## Commands
 
-- `:CwacsScan` - run scan for current buffer
+- `:CwacsScan` - run scan for current buffer and show summary
 - `:CwacsToggle` - enable/disable cwacs runtime scanning
+- `:CwacsFindings` - refresh location list entries for current-buffer findings
+- `:CwacsExplain` - open float popup for finding on current line
+- `:CwacsFinding` - alias of `:CwacsExplain`
+- `:CwacsHelp` - show quick command help
+- `:CwacsHealth` - show required parser readiness report
 
 ## Architecture (scaffold phase)
 
 - `lua/cwacs/init.lua` - public entrypoint
 - `lua/cwacs/core.lua` - command/autocmd wiring and scan orchestration
 - `lua/cwacs/config.lua` - defaults and config merge
-- `lua/cwacs/engine.lua` - scan engine interface (stub in scaffold)
+- `lua/cwacs/engine.lua` - tree-sitter scan engine (baseline rules)
 - `lua/cwacs/diagnostics.lua` - diagnostic translation + namespace
 - `lua/cwacs/rules/init.lua` - built-in rule registry (to be expanded)
 - `plugin/cwacs.lua` - plugin load guard
@@ -123,6 +131,13 @@ require("cwacs").setup({
 ## Roadmap
 
 Implementation is tracked feature-by-feature in local `TASKS.md` (kept out of remote by local git exclude).
+
+## In-repo Documentation
+
+- `doc/README.md` - documentation policy and structure
+- `doc/cwacs.md` - detailed project documentation
+- `doc/feature-log.md` - feature-by-feature delivery log
+- `doc/cwacs.txt` - Vim help scaffold
 
 ## Contributing Workflow
 
@@ -132,4 +147,4 @@ Implementation is tracked feature-by-feature in local `TASKS.md` (kept out of re
 
 ## README Maintenance Rule
 
-README is reviewed at the end of every feature and updated when behavior, config, commands, or integration changes.
+README and `doc/*` are reviewed at the end of every feature and updated when behavior, config, commands, or integration changes.

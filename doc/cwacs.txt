@@ -1,0 +1,49 @@
+*cwacs.txt*   cwacs.nvim help   Last change: 2026-03-09
+
+===============================================================================
+cwacs.nvim                                                     *cwacs* *cwacs.nvim*
+
+cwacs.nvim is a tree-sitter based security lint plugin for Neovim.
+
+This help file is currently a minimal scaffold and will be expanded feature by
+feature.
+
+===============================================================================
+COMMANDS                                                       *cwacs-commands*
+
+    :CwacsScan
+        Run scan for current buffer and show summary.
+
+    :CwacsToggle
+        Enable or disable realtime scanning.
+
+    :CwacsFindings
+        Refresh location list entries for findings.
+
+    :CwacsExplain
+        Show float detail for finding on current line.
+
+    :CwacsFinding
+        Alias of :CwacsExplain.
+
+    :CwacsHelp
+        Show quick command help.
+
+    :CwacsHealth
+        Show parser readiness report.
+
+===============================================================================
+CONFIGURATION                                                  *cwacs-configuration*
+
+Basic setup:
+
+>
+    require("cwacs").setup({
+      enabled = true,
+      realtime = { enabled = true, debounce_ms = 300 },
+      on_save = { enabled = true },
+    })
+<
+
+===============================================================================
+vim:tw=78:ts=8:noet:ft=help:norl:
