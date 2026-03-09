@@ -1,0 +1,33 @@
+# OS artifacts
+.DS_Store
+Thumbs.db
+
+# Editor / IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Logs and temp
+*.log
+tmp/
+temp/
+.cache/
+
+# Lua / Neovim tooling
+.luarc.json
+.styluaignore
+
+# Test outputs and coverage
+coverage/
+*.out
+
+# Runtime outputs (plugin generated)
+.cwacs/findings.json
+.cwacs/findings.sarif
+
+# Secrets / env
+.env
+.env.*
+*.pem
+*.key
