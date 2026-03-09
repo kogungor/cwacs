@@ -1,6 +1,7 @@
 local M = {}
 local config = require("cwacs.config")
 local rules = require("cwacs.rules")
+local compound = require("cwacs.util.compound")
 
 local function resolve_lang(bufnr)
   local filetype = vim.bo[bufnr].filetype
@@ -162,6 +163,15 @@ local function run_rule(bufnr, lang, root, rule)
     local custom_ok, custom_findings = pcall(rule.custom_scan, bufnr, rule, lang)
     if custom_ok and type(custom_findings) == "table" then
       for _, finding in ipairs(custom_findings) do
+        findings[#findings + 1] = finding
+      end
+    end
+  end
+
+  if rule.compound then
+    local compound_ok, compound_findings = pcall(compound.scan_lines, bufnr, rule)
+    if compound_ok and type(compound_findings) == "table" then
+      for _, finding in ipairs(compound_findings) do
         findings[#findings + 1] = finding
       end
     end

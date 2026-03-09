@@ -10,7 +10,7 @@ This file tracks feature-by-feature delivery and must be updated after each feat
 - [x] Debounce and async hardening
 - [x] Dangerous functions built-ins
 - [x] Hardcoded secrets
-- [ ] Compound pattern matching
+- [x] Compound pattern matching
 - [ ] Intra-function dataflow tracker
 - [ ] YAML rule loader and validator
 - [ ] SQL Injection + XSS + Command Injection packs
@@ -91,6 +91,16 @@ Delivered:
 - added optional severity reduction for secret findings in test files
 - added automated vulnerable/safe feature tests for hardcoded secret detection
 
-## SG-007..SG-016
+## SG-007 - Compound pattern matching
+
+Status: done
+
+Delivered:
+- added generic compound line-scanning utility with `all_of` and `any_of` operators
+- added compound rule execution support in the engine
+- added SQL-injection style compound rules for Python, JavaScript/TypeScript, and Go
+- added automated test coverage for vulnerable/safe compound detection and `any_of` semantics
+
+## SG-008..SG-016
 
 Status: pending
