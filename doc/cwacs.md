@@ -4,10 +4,11 @@ Tree-sitter based, Lua-native security lint plugin for Neovim.
 
 ## Current milestone status
 
-- SG-001: done (scaffold + setup + runtime wiring)
-- SG-002: done (baseline tree-sitter engine + eval detection)
-- SG-003: done (diagnostics UX commands and messages)
-- SG-004..SG-016: planned
+- Scaffold and setup: done
+- Basic tree-sitter engine: done
+- Diagnostic API integration and UX commands: done
+- Debounce and async management: done
+- Remaining planned features: pending
 
 ## Commands
 
@@ -36,6 +37,7 @@ require("cwacs").setup({
   realtime = {
     enabled = true,
     debounce_ms = 300,
+    notify = false,
   },
   on_save = {
     enabled = true,
@@ -51,6 +53,15 @@ require("cwacs").setup({
 - Primary detail UX: float popup (`:CwacsExplain`)
 - Batch triage UX: location list (`:CwacsFindings` + `:lopen`)
 - Scan summary UX: notify with severity counts and top finding
+
+## Debounce and async behavior
+
+- Rapid `TextChanged` events are debounced into a single scan execution window.
+- Insert-mode typing is included via `TextChangedI`.
+- Stale scheduled timers are ignored via per-buffer scan generation checks.
+- On-save scans force execution even if `changedtick` did not change.
+- Pending timers are cleaned when buffers are deleted or wiped.
+- Optional realtime summary notifications can be enabled with `realtime.notify = true`.
 
 ## Local development install
 

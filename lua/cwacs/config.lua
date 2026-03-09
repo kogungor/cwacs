@@ -5,6 +5,7 @@ local defaults = {
   realtime = {
     enabled = true,
     debounce_ms = 300,
+    notify = false,
   },
   on_save = {
     enabled = true,

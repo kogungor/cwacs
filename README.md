@@ -6,9 +6,10 @@ Tree-sitter based, Lua-native security linter for Neovim.
 
 ## Current Status
 
-- Milestones completed: `SG-001` scaffold, `SG-002` basic tree-sitter engine, `SG-003` diagnostics UX.
+- Milestones completed: scaffold and setup, basic tree-sitter engine, diagnostics UX, debounce and async management.
 - Commands available: `:CwacsScan`, `:CwacsToggle`, `:CwacsFindings`, `:CwacsExplain`, `:CwacsHelp`, `:CwacsHealth`.
 - Realtime + on-save wiring is active.
+- Debounce now cancels stale scheduled scans and force-runs on save.
 - Initial detection implemented: `eval()` for JavaScript/TypeScript and Python.
 
 ## Goals
@@ -69,7 +70,7 @@ You can also use prepared fixtures under `playground/`.
 ## Feature Test Files
 
 - One feature test file exists per milestone under `tests/features/` (`sg_001` .. `sg_016`).
-- Current implemented tests: `SG-001` scaffold, `SG-002` engine baseline, `SG-003` diagnostics adapter.
+- Current implemented tests: scaffold and setup, tree-sitter engine baseline, diagnostics adapter, debounce and async management.
 - Future feature tests are already scaffolded and marked as skipped until implemented.
 
 Run feature tests with headless Neovim:
@@ -79,14 +80,17 @@ nvim --headless -u NONE "+set rtp+=$(pwd)" "+luafile tests/run_feature_tests.lua
 ```
 
 Expected current result:
-- `SG-001`, `SG-002`, and `SG-003` should pass (SG-002 may skip if JS parser is unavailable).
-- `SG-004` .. `SG-016` should report skipped.
+- Scaffold and setup, diagnostics adapter, and debounce and async management should pass.
+- Tree-sitter engine baseline may skip if JS parser is unavailable.
+- Remaining planned features should report skipped.
 
 ## Troubleshooting
 
 - `:CwacsScan` always prints completion info. If findings are `0`, this can be normal.
 - At this stage only `eval()` rules are active, so test with files like `playground/javascript/vuln_eval.js`.
 - If you print all diagnostics, you may mostly see LSP entries. Filter cwacs diagnostics by namespace (example in Manual test flow step 3).
+- If diagnostics output is `{}`, there are no cwacs findings for the current buffer/line. Verify with `:CwacsHealth` that the language parser is installed and use a known vulnerable fixture.
+- To get realtime scan notifications while typing, set `realtime.notify = true` in setup.
 
 ## Configuration
 
@@ -98,6 +102,7 @@ require("cwacs").setup({
   realtime = {
     enabled = true,
     debounce_ms = 300,
+    notify = false,
   },
   on_save = {
     enabled = true,

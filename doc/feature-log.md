@@ -33,12 +33,15 @@ Delivered:
 
 ## SG-004 - Debounce and async hardening
 
-Status: pending
+Status: done
 
-Planned:
-- stronger timer lifecycle handling
-- stale scan cancellation and concurrency safeguards
-- test coverage for rapid edit scenarios
+Delivered:
+- per-buffer scan generation guard to ignore stale scheduled callbacks
+- improved timer lifecycle handling and cleanup on toggle/buffer deletion
+- on-save forced scan path independent from changedtick cache
+- realtime trigger includes insert-mode changes (`TextChangedI`)
+- optional realtime summary notifications via `realtime.notify`
+- automated test coverage for rapid edits, forced on-save scans, and deleted-buffer timers
 
 ## SG-005..SG-016
 
