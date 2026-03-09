@@ -8,6 +8,7 @@ Tree-sitter based, Lua-native security lint plugin for Neovim.
 - Basic tree-sitter engine: done
 - Diagnostic API integration and UX commands: done
 - Debounce and async management: done
+- Dangerous functions built-ins: done
 - Remaining planned features: pending
 
 ## Commands
@@ -22,11 +23,12 @@ Tree-sitter based, Lua-native security lint plugin for Neovim.
 
 ## Current detection coverage
 
-- JavaScript/TypeScript: `eval(...)`
-- Python: `eval(...)`
+- JavaScript/TypeScript: `eval(...)`, `Function(...)`, string-based timer execution, `exec(...)` patterns
+- Python: `eval(...)`, `exec(...)`, `os.system(...)`, `subprocess.call(...)`, selected deserialization APIs
+- Go: `exec.Command(...)` pattern checks
+- Rust: `Command::new(...)` pattern checks
 
 Notes:
-- Rust/Go dangerous function coverage is planned under SG-005/SG-010.
 - Missing tree-sitter parser for a language results in no findings for that language.
 
 ## Configuration
@@ -38,9 +40,15 @@ require("cwacs").setup({
     enabled = true,
     debounce_ms = 300,
     notify = false,
+    notify_min_interval_ms = 1500,
+    debug = false,
   },
   on_save = {
     enabled = true,
+  },
+  scan = {
+    notify_on_manual = true,
+    notify_when_no_findings = true,
   },
   rules = {
     disabled = {},
@@ -62,6 +70,10 @@ require("cwacs").setup({
 - On-save scans force execution even if `changedtick` did not change.
 - Pending timers are cleaned when buffers are deleted or wiped.
 - Optional realtime summary notifications can be enabled with `realtime.notify = true`.
+- Realtime notification frequency can be throttled with `realtime.notify_min_interval_ms`.
+- Temporary scan trace notifications can be enabled with `realtime.debug = true`.
+- Manual scan summary notifications can be disabled with `scan.notify_on_manual = false`.
+- Zero-finding notifications can be disabled with `scan.notify_when_no_findings = false`.
 
 ## Local development install
 
