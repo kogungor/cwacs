@@ -11,8 +11,8 @@ This file tracks feature-by-feature delivery and must be updated after each feat
 - [x] Dangerous functions built-ins
 - [x] Hardcoded secrets
 - [x] Compound pattern matching
-- [ ] Intra-function dataflow tracker
-- [ ] YAML rule loader and validator
+- [x] Intra-function dataflow tracker
+- [x] YAML rule loader and validator
 - [ ] SQL Injection + XSS + Command Injection packs
 - [ ] Insecure crypto, deserialization, path traversal, open redirect packs
 - [ ] Ignore and suppress mechanisms
@@ -118,6 +118,20 @@ Delivered:
 - playground fixtures: `vuln_flow_sqli.py`, `safe_flow_sqli.py`, `vuln_flow_chain.py`, `vuln_flow_sqli.js`, `safe_flow_sqli.js`
 - 7-assertion automated test covering: direct source→sink, multi-hop chain, sanitizer suppression, parameterized-query false-positive guard, JS detection, high-confidence assertion
 
-## SG-009..SG-016
+## SG-009 - YAML rule loader and validator
+
+Status: done
+
+Delivered:
+- added `lua/cwacs/loader.lua` with pure-Lua YAML subset parser (list of rule maps)
+- supports `.yaml` and `.yml` loading from configured `rules.custom_path`
+- normalizes `language`/`languages` and `pattern`/`line_pattern` forms
+- validates required schema fields (`id`, language(s), pattern)
+- skips invalid rules and tracks validation errors per file/entry
+- integrated custom rule loading into rules selection path (`cwacs.rules`)
+- added startup reload in `setup()` and manual reload command `:CwacsReloadRules`
+- added automated feature coverage for valid+invalid YAML handling and execution through engine scan
+
+## SG-010..SG-016
 
 Status: pending

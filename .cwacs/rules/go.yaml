@@ -1,0 +1,15 @@
+- id: CWACS_CUSTOM_GO_EXEC_COMMAND_PLAYGROUND
+  language: go
+  severity: high
+  confidence: medium
+  cwe: CWE-78
+  message: Custom YAML rule hit - exec.Command() usage
+  line_pattern: "exec%.Command%s*%("
+
+- id: CWACS_CUSTOM_GO_SPRINTF_PLAYGROUND
+  language: go
+  severity: medium
+  confidence: low
+  cwe: CWE-89
+  message: Custom YAML rule hit - fmt.Sprintf() usage
+  line_pattern: "fmt%.Sprintf%s*%("

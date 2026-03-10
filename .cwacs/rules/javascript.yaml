@@ -1,0 +1,15 @@
+- id: CWACS_CUSTOM_JS_EVAL_PLAYGROUND
+  languages: [javascript, typescript, jsx, tsx]
+  severity: high
+  confidence: high
+  cwe: CWE-95
+  message: Custom YAML rule hit - eval() usage
+  line_pattern: "eval%s*%("
+
+- id: CWACS_CUSTOM_JS_EXEC_PLAYGROUND
+  languages: [javascript, typescript, jsx, tsx]
+  severity: high
+  confidence: medium
+  cwe: CWE-78
+  message: Custom YAML rule hit - exec() usage
+  line_pattern: "[%w_%.]+exec%s*%("

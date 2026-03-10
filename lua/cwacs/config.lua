@@ -35,6 +35,7 @@ local defaults = {
     "/fixtures/",
   },
   rules = {
+    custom_path = ".cwacs/rules",
     disabled = {},
   },
 }

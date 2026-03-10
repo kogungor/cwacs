@@ -6,13 +6,14 @@ Tree-sitter based, Lua-native security linter for Neovim.
 
 ## Current Status
 
-- Milestones completed: scaffold and setup, basic tree-sitter engine, diagnostics UX, debounce and async management, dangerous functions built-ins, hardcoded secrets rules, compound pattern matching, intra-function dataflow tracking.
-- Commands available: `:CwacsScan`, `:CwacsToggle`, `:CwacsFindings`, `:CwacsExplain`, `:CwacsHelp`, `:CwacsHealth`.
+- Milestones completed: scaffold and setup, basic tree-sitter engine, diagnostics UX, debounce and async management, dangerous functions built-ins, hardcoded secrets rules, compound pattern matching, intra-function dataflow tracking, YAML custom rule loader.
+- Commands available: `:CwacsScan`, `:CwacsToggle`, `:CwacsFindings`, `:CwacsExplain`, `:CwacsHelp`, `:CwacsHealth`, `:CwacsReloadRules`.
 - Realtime + on-save wiring is active.
 - Debounce now cancels stale scheduled scans and force-runs on save.
 - Initial dangerous-function detection is implemented for Python, JavaScript/TypeScript, Go, and Rust.
 - Hardcoded secret detection now includes keyword-based and high-entropy token rules with env/placeholder suppression.
 - Intra-function dataflow tracker now follows source -> reassignment -> sink chains with sanitizer interruption.
+- YAML custom rules now load from `.cwacs/rules` (`.yaml`/`.yml`) with schema validation and manual reload support.
 
 ## Goals
 
@@ -80,7 +81,7 @@ You can also use prepared fixtures under `playground/`.
 ## Feature Test Files
 
 - One feature test file exists per milestone under `tests/features/` (`sg_001` .. `sg_016`).
-- Current implemented tests: scaffold and setup, tree-sitter engine baseline, diagnostics adapter, debounce and async management, dangerous functions built-ins, hardcoded secrets rules, compound pattern matching, intra-function dataflow tracking.
+- Current implemented tests: scaffold and setup, tree-sitter engine baseline, diagnostics adapter, debounce and async management, dangerous functions built-ins, hardcoded secrets rules, compound pattern matching, intra-function dataflow tracking, YAML custom rule loader.
 - Future feature tests are already scaffolded and marked as skipped until implemented.
 
 Run feature tests with headless Neovim:
@@ -96,6 +97,7 @@ Expected current result:
 - Hardcoded secrets rules should pass without parser dependency.
 - Compound pattern matching should pass without parser dependency.
 - Intra-function dataflow tracking should pass without parser dependency.
+- YAML custom rule loader should pass without parser dependency.
 - Remaining planned features should report skipped.
 
 ## Troubleshooting
@@ -155,6 +157,7 @@ require("cwacs").setup({
     "/fixtures/",
   },
   rules = {
+    custom_path = ".cwacs/rules",
     disabled = {},
   },
 })
@@ -169,6 +172,7 @@ require("cwacs").setup({
 - `:CwacsFinding` - alias of `:CwacsExplain`
 - `:CwacsHelp` - show quick command help
 - `:CwacsHealth` - show required parser readiness report
+- `:CwacsReloadRules` - reload custom YAML rules from `rules.custom_path`
 
 ## Architecture (scaffold phase)
 
