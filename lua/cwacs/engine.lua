@@ -2,6 +2,7 @@ local M = {}
 local config = require("cwacs.config")
 local rules = require("cwacs.rules")
 local compound = require("cwacs.util.compound")
+local flow = require("cwacs.flow")
 
 local function resolve_lang(bufnr)
   local filetype = vim.bo[bufnr].filetype
@@ -237,6 +238,20 @@ function M.scan(bufnr)
 
   findings = dedupe_findings(findings)
   findings = apply_secret_post_filters(bufnr, findings)
+
+  -- Flow analysis — run when enabled in config (on_save or always)
+  local opts = config.get()
+  local flow_enabled = (opts.on_save and opts.on_save.flow_analysis ~= false)
+                    or (opts.flow and opts.flow.enabled ~= false)
+  if flow_enabled then
+    local flow_ok, flow_findings = pcall(flow.scan, bufnr, lang)
+    if flow_ok and type(flow_findings) == "table" then
+      for _, finding in ipairs(flow_findings) do
+        findings[#findings + 1] = finding
+      end
+    end
+  end
+
   return dedupe_findings(findings)
 end
 

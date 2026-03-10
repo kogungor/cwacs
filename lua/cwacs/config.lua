@@ -11,6 +11,10 @@ local defaults = {
   },
   on_save = {
     enabled = true,
+    flow_analysis = true,
+  },
+  flow = {
+    enabled = true,
   },
   scan = {
     notify_on_manual = true,
