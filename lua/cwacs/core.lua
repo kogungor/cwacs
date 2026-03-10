@@ -1,6 +1,7 @@
 local config = require("cwacs.config")
 local diagnostics = require("cwacs.diagnostics")
 local engine = require("cwacs.engine")
+local rules = require("cwacs.rules")
 
 local M = {}
 
@@ -326,6 +327,7 @@ local function command_help()
     "- :lopen          -> open location list window",
     "- :CwacsExplain   -> show detail popup on current line",
     "- :CwacsHealth    -> check tree-sitter parser readiness",
+    "- :CwacsReloadRules -> reload custom YAML rules",
   }
 
   vim.notify(table.concat(lines, "\n"), vim.log.levels.INFO, { title = "cwacs help" })
@@ -346,6 +348,19 @@ local function command_health()
 
   local level = #report.missing == 0 and vim.log.levels.INFO or vim.log.levels.WARN
   vim.notify(table.concat(lines, "\n"), level, { title = "cwacs health" })
+end
+
+local function command_reload_rules()
+  local loaded, errors = rules.reload_custom()
+  if #errors > 0 then
+    vim.notify(
+      string.format("cwacs: loaded %d custom rules (%d invalid)", #loaded, #errors),
+      vim.log.levels.WARN
+    )
+    return
+  end
+
+  vim.notify(string.format("cwacs: loaded %d custom rules", #loaded), vim.log.levels.INFO)
 end
 
 function M.scan_current_buffer()
@@ -373,6 +388,7 @@ local function create_commands()
   pcall(vim.api.nvim_del_user_command, "CwacsFinding")
   pcall(vim.api.nvim_del_user_command, "CwacsHelp")
   pcall(vim.api.nvim_del_user_command, "CwacsHealth")
+  pcall(vim.api.nvim_del_user_command, "CwacsReloadRules")
 
   vim.api.nvim_create_user_command("CwacsScan", command_scan, {
     desc = "Run cwacs scan for current buffer",
@@ -400,6 +416,10 @@ local function create_commands()
 
   vim.api.nvim_create_user_command("CwacsHealth", command_health, {
     desc = "Show cwacs parser readiness",
+  })
+
+  vim.api.nvim_create_user_command("CwacsReloadRules", command_reload_rules, {
+    desc = "Reload custom YAML rules from configured path",
   })
 end
 
@@ -451,6 +471,11 @@ end
 function M.setup(user_config)
   local opts = config.set(user_config)
   state.enabled = opts.enabled
+
+  local _, errors = rules.reload_custom()
+  if #errors > 0 then
+    vim.notify(string.format("cwacs: %d custom YAML rules are invalid", #errors), vim.log.levels.WARN)
+  end
 
   create_commands()
   create_autocmds(opts)

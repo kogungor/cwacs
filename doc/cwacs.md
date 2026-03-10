@@ -12,6 +12,7 @@ Tree-sitter based, Lua-native security lint plugin for Neovim.
 - Hardcoded secrets rules: done
 - Compound pattern matching: done
 - Intra-function dataflow tracker: done
+- YAML custom rule loader: done
 - Remaining planned features: pending
 
 ## Commands
@@ -23,6 +24,7 @@ Tree-sitter based, Lua-native security lint plugin for Neovim.
 - `:CwacsFinding` - alias of `:CwacsExplain`
 - `:CwacsHelp` - quick command help
 - `:CwacsHealth` - parser readiness check
+- `:CwacsReloadRules` - reload custom YAML rules from configured path
 
 ## Current detection coverage
 
@@ -78,6 +80,7 @@ require("cwacs").setup({
     "/fixtures/",
   },
   rules = {
+    custom_path = ".cwacs/rules",
     disabled = {},
   },
 })

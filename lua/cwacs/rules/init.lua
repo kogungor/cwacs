@@ -1,5 +1,22 @@
 local M = {}
 local secrets = require("cwacs.util.secrets")
+local config = require("cwacs.config")
+local loader = require("cwacs.loader")
+
+M.custom = {}
+M.custom_errors = {}
+M.custom_loaded = false
+
+function M.reload_custom()
+  local opts = config.get()
+  local rules_opts = opts.rules or {}
+  local custom_path = rules_opts.custom_path
+  local custom, errors = loader.load_path(custom_path)
+  M.custom = custom
+  M.custom_errors = errors
+  M.custom_loaded = true
+  return custom, errors
+end
 
 M.builtins = {
   {
@@ -330,7 +347,20 @@ M.builtins = {
 function M.for_language(lang)
   local selected = {}
 
+  if not M.custom_loaded then
+    M.reload_custom()
+  end
+
   for _, rule in ipairs(M.builtins) do
+    for _, rule_lang in ipairs(rule.languages or {}) do
+      if rule_lang == lang then
+        selected[#selected + 1] = rule
+        break
+      end
+    end
+  end
+
+  for _, rule in ipairs(M.custom or {}) do
     for _, rule_lang in ipairs(rule.languages or {}) do
       if rule_lang == lang then
         selected[#selected + 1] = rule

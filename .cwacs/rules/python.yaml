@@ -1,0 +1,15 @@
+- id: CWACS_CUSTOM_PY_EVAL_PLAYGROUND
+  language: python
+  severity: high
+  confidence: high
+  cwe: CWE-95
+  message: Custom YAML rule hit - eval() usage
+  line_pattern: "eval%s*%("
+
+- id: CWACS_CUSTOM_PY_OS_SYSTEM_PLAYGROUND
+  language: python
+  severity: high
+  confidence: medium
+  cwe: CWE-78
+  message: Custom YAML rule hit - os.system() usage
+  line_pattern: "os%.system%s*%("

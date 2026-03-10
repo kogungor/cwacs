@@ -1,0 +1,15 @@
+- id: CWACS_CUSTOM_RUST_COMMAND_NEW_PLAYGROUND
+  language: rust
+  severity: high
+  confidence: medium
+  cwe: CWE-78
+  message: Custom YAML rule hit - Command::new() usage
+  line_pattern: "Command::new%s*%("
+
+- id: CWACS_CUSTOM_RUST_FORMAT_PLAYGROUND
+  language: rust
+  severity: medium
+  confidence: low
+  cwe: CWE-20
+  message: Custom YAML rule hit - format!() usage in command context review
+  line_pattern: "format!%s*%("
