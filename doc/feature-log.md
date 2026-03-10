@@ -101,6 +101,23 @@ Delivered:
 - added SQL-injection style compound rules for Python, JavaScript/TypeScript, and Go
 - added automated test coverage for vulnerable/safe compound detection and `any_of` semantics
 
-## SG-008..SG-016
+## SG-008 - Intra-function dataflow tracker
+
+Status: done
+
+Delivered:
+- added `lua/cwacs/flow.lua` — line-based intra-function taint tracker
+- two-phase algorithm: Pass 1 builds taint map (source → propagation → sanitizer), Pass 2 checks sink lines
+- taint metadata tracks `raw` vs `embedded` state to distinguish safe parameterized calls from dangerous string interpolation/concatenation
+- sanitizer interruption: any variable wrapped in a known sanitizer loses its taint
+- source patterns cover Python (`request.args`, `sys.argv`, `os.environ`, `input()`, ...), JavaScript/TypeScript (`req.body`, `req.query`, `req.params`, location APIs, ...), Go (`r.FormValue`, `r.URL.Query`, `os.Args`, ...)
+- sink patterns cover SQLi, command injection, code injection, path traversal, XSS, and open redirect across Python, JS/TS, and Go
+- JS/TS `const`/`let`/`var` declaration syntax handled in LHS extraction
+- flow module integrated into engine — runs when `on_save.flow_analysis = true` (default) or `flow.enabled = true`
+- findings carry `confidence = "high"` — compound SQLi rules from SG-007 can be elevated now that dataflow confirms taint
+- playground fixtures: `vuln_flow_sqli.py`, `safe_flow_sqli.py`, `vuln_flow_chain.py`, `vuln_flow_sqli.js`, `safe_flow_sqli.js`
+- 7-assertion automated test covering: direct source→sink, multi-hop chain, sanitizer suppression, parameterized-query false-positive guard, JS detection, high-confidence assertion
+
+## SG-009..SG-016
 
 Status: pending

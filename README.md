@@ -6,12 +6,13 @@ Tree-sitter based, Lua-native security linter for Neovim.
 
 ## Current Status
 
-- Milestones completed: scaffold and setup, basic tree-sitter engine, diagnostics UX, debounce and async management, dangerous functions built-ins, hardcoded secrets rules, compound pattern matching.
+- Milestones completed: scaffold and setup, basic tree-sitter engine, diagnostics UX, debounce and async management, dangerous functions built-ins, hardcoded secrets rules, compound pattern matching, intra-function dataflow tracking.
 - Commands available: `:CwacsScan`, `:CwacsToggle`, `:CwacsFindings`, `:CwacsExplain`, `:CwacsHelp`, `:CwacsHealth`.
 - Realtime + on-save wiring is active.
 - Debounce now cancels stale scheduled scans and force-runs on save.
 - Initial dangerous-function detection is implemented for Python, JavaScript/TypeScript, Go, and Rust.
 - Hardcoded secret detection now includes keyword-based and high-entropy token rules with env/placeholder suppression.
+- Intra-function dataflow tracker now follows source -> reassignment -> sink chains with sanitizer interruption.
 
 ## Goals
 
@@ -47,6 +48,10 @@ return {
         },
         on_save = {
           enabled = true,
+          flow_analysis = true,
+        },
+        flow = {
+          enabled = true,
         },
         scan = {
           notify_on_manual = true,
@@ -75,7 +80,7 @@ You can also use prepared fixtures under `playground/`.
 ## Feature Test Files
 
 - One feature test file exists per milestone under `tests/features/` (`sg_001` .. `sg_016`).
-- Current implemented tests: scaffold and setup, tree-sitter engine baseline, diagnostics adapter, debounce and async management, dangerous functions built-ins, hardcoded secrets rules, compound pattern matching.
+- Current implemented tests: scaffold and setup, tree-sitter engine baseline, diagnostics adapter, debounce and async management, dangerous functions built-ins, hardcoded secrets rules, compound pattern matching, intra-function dataflow tracking.
 - Future feature tests are already scaffolded and marked as skipped until implemented.
 
 Run feature tests with headless Neovim:
@@ -90,6 +95,7 @@ Expected current result:
 - Dangerous functions built-ins may skip if required parsers are unavailable.
 - Hardcoded secrets rules should pass without parser dependency.
 - Compound pattern matching should pass without parser dependency.
+- Intra-function dataflow tracking should pass without parser dependency.
 - Remaining planned features should report skipped.
 
 ## Troubleshooting
@@ -97,6 +103,7 @@ Expected current result:
 - `:CwacsScan` always prints completion info. If findings are `0`, this can be normal.
 - Current rules include `eval()`, command execution primitives, selected deserialization APIs, and SQL-injection style compound patterns.
 - For compound validation, use `playground/python/vuln_sqli_concat.py`, `playground/python/safe_sqli_param.py`, and `playground/javascript/vuln_sqli_template.js`.
+- For dataflow validation, use `playground/python/vuln_flow_sqli.py`, `playground/python/safe_flow_sqli.py`, `playground/python/vuln_flow_chain.py`, `playground/javascript/vuln_flow_sqli.js`, and `playground/javascript/safe_flow_sqli.js`.
 - For secret validation, use `playground/python/vuln_secret.py` and `playground/javascript/vuln_secret.js`.
 - If you print all diagnostics, you may mostly see LSP entries. Filter cwacs diagnostics by namespace (example in Manual test flow step 3).
 - If diagnostics output is `{}`, there are no cwacs findings for the current buffer/line. Verify with `:CwacsHealth` that the language parser is installed and use a known vulnerable fixture.
@@ -123,6 +130,10 @@ require("cwacs").setup({
     debug = false,
   },
   on_save = {
+    enabled = true,
+    flow_analysis = true,
+  },
+  flow = {
     enabled = true,
   },
   scan = {

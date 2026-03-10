@@ -11,6 +11,7 @@ Tree-sitter based, Lua-native security lint plugin for Neovim.
 - Dangerous functions built-ins: done
 - Hardcoded secrets rules: done
 - Compound pattern matching: done
+- Intra-function dataflow tracker: done
 - Remaining planned features: pending
 
 ## Commands
@@ -31,6 +32,7 @@ Tree-sitter based, Lua-native security lint plugin for Neovim.
 - Rust: `Command::new(...)` pattern checks
 - Language-agnostic secret detection: keyword-based secret assignments and high-entropy token-like literals
 - Compound SQL-injection style detection: Python concatenated execute, JS template-literal query, Go sprintf+query same-line pattern
+- Intra-function dataflow tracking: source-to-sink taint analysis within a file scope — detects SQLi, command injection, code injection, path traversal, XSS, open redirect across Python, JS/TS, and Go
 
 Notes:
 - Missing tree-sitter parser for a language results in no findings for that language.
@@ -52,6 +54,10 @@ require("cwacs").setup({
   },
   on_save = {
     enabled = true,
+    flow_analysis = true,  -- run dataflow tracker on save
+  },
+  flow = {
+    enabled = true,        -- also run during realtime scans
   },
   scan = {
     notify_on_manual = true,

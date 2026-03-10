@@ -13,9 +13,11 @@ Manual testing fixtures for quick local validation.
 - `python/vuln_eval.py` and `python/safe_no_eval.py`
 - `python/vuln_secret.py` and `python/safe_env_secret.py`
 - `python/vuln_sqli_concat.py` and `python/safe_sqli_param.py`
+- `python/vuln_flow_sqli.py`, `python/safe_flow_sqli.py`, and `python/vuln_flow_chain.py`
 - `javascript/vuln_eval.js` and `javascript/safe_no_eval.js`
 - `javascript/vuln_secret.js` and `javascript/safe_env_secret.js`
 - `javascript/vuln_sqli_template.js`
+- `javascript/vuln_flow_sqli.js` and `javascript/safe_flow_sqli.js`
 - `go/vuln_exec.go` and `go/safe_exec.go`
 - `rust/vuln_command.rs` and `rust/safe_command.rs`
 
